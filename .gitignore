@@ -1,3 +1,12 @@
 .venv/
+
+#Cached files and directories
+__pycache__/
+*.pyc
+*.pyo
+*.log
 .idea/
+logs/
+cache/
+
 .env
