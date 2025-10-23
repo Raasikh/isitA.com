@@ -1,0 +1,11 @@
+2025-10-22 22:14:47.530 | CRITICAL | app.core.logging:handle_exception:52 - Uncaught exception
+Traceback (most recent call last):
+
+> File "/Users/ronald/Downloads/NewsApp/isitA.com/main.py", line 46, in <module>
+    app.include_router(router, prefix=settings.API_V1_STR)
+    │   │                             │        └ '/api/v1'
+    │   │                             └ Settings(AUTHOR='Ronald N. Kanyepi & Raasikh Ahmed', APP_NAME='Default app name', APP_VERSION='0.1.0', APP_DESCRIPTION='This ...
+    │   └ <function FastAPI.include_router at 0x10b482ca0>
+    └ <fastapi.applications.FastAPI object at 0x115c78440>
+
+NameError: name 'router' is not defined
