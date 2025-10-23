@@ -1,9 +1,71 @@
 [project]
 name = "isita-com"
 version = "0.1.0"
-description = "Add your description here"
+description = "Creating personalized news articles"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.17.0",
+    "async-lru>=2.0.5",
+    "asyncpg>=0.30.0",
     "crawl4ai>=0.7.6",
+    "fastapi>=0.119.1",
+    "httpx>=0.28.1",
+    "langchain>=1.0.2",
+    "langfuse>=3.8.1",
+    "langgraph>=1.0.1",
+    "langmem>=0.0.28",
+    "loguru>=0.7.3",
+    "lxml>=5.4.0",
+    "pgvector>=0.4.1",
+    "pyodbc>=5.3.0",
+    "pytest>=8.4.2",
+    "python-dotenv>=1.1.1",
+    "redis>=7.0.0",
+    "rich>=14.2.0",
+    "slowapi>=0.1.9",
+    "sqlalchemy>=2.0.44",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "pyright>=1.1.406",
+    "ruff>=0.14.1",
+    "typos>=1.38.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+show-fixes = true
+unsafe-fixes = true
+
+[tool.ruff.lint]
+select = ["I", "F", "E", "W"]  # Import sorting (I), pyflakes (F), pycodestyle (E/W) for blank line checks
+ignore = ["E501"] # Let Black handle wrapping, ignore line-too-long rule
+pycodestyle.max-doc-length = 300
+pydocstyle.convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.isort]
+profile = "black"
+force_sort_within_sections = true  # ensures alphabetical order inside sections
+
+[tool.black]
+line-length = 100
+
+[tool.pyright]
+exclude = [
+    "**/tests/**",
+    "**/__pycache__",
+    "**/generated_code/*",
+    "**/.venv",
+    "**/migrations",
+    "**/alembic.ini"
+]
+
+[tool.typos.default.extend-words]
+teh = "teh"
