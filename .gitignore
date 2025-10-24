@@ -1,7 +1,7 @@
 .venv/
 
 #Cached files and directories
-__pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.log
