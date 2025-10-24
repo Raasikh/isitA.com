@@ -1,10 +1,3 @@
-# isitA.com 
-
-### Environment Setup
-
-Here’s a concise **step-by-step guide** for someone to run the application - only the essential steps:
-
----
 > ### Hey Bro
 > - I noticed we have many commands that we will likely repeat often, so I decided to use `make`. If you are using Linux or Mac, `make` is available by default. If you are on Windows, check [this guide](https://medium.com/@AliMasaoodi/installing-make-on-windows-10-using-chocolatey-a-step-by-step-guide-5e178c449394). Let me know if you run into any issues. 
 > - Remember to create the .env file you can copy the example file that I pushed.
@@ -22,6 +15,15 @@ Here’s a concise **step-by-step guide** for someone to run the application - o
 > - Please note that the first Docker build will be a bit slow, but subsequent builds will be faster. This is because Playwright, a major dependency of `crawl4ai`, takes time to install.
 > - Connect to the postgres instance on 5432. Remember we have to add the pg vector extension and run the query ```sql CREATE EXTENSION IF NOT EXISTS vector;``` and run on terminal (you should activate the .venv) `make migrate`
 > - To see all the endpoints ypu can use swagger check : (http://localhost:8005/docs)[http://localhost:8005/docs] . They should be 11 in total.
+
+
+# isitA.com 
+
+### Environment Setup
+
+Here’s a concise **step-by-step guide** for someone to run the application - only the essential steps:
+
+---
 
 
 
