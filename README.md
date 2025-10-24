@@ -14,7 +14,7 @@
 >   I can add support for additional formats if needed.  
 > - Please note that the first Docker build will be a bit slow, but subsequent builds will be faster. This is because Playwright, a major dependency of `crawl4ai`, takes time to install.
 > - Connect to the postgres instance on 5432. Remember we have to add the pg vector extension and run the query ```sql CREATE EXTENSION IF NOT EXISTS vector;``` and run on terminal (you should activate the .venv) `make migrate`
-> - To see all the endpoints ypu can use swagger check : (http://localhost:8005/docs)[http://localhost:8005/docs] . They should be 11 in total.
+> - To see all the endpoints ypu can use swagger check : [http://localhost:8005/docs](http://localhost:8005/docs) . They should be 11 in total.
 
 
 # isitA.com 
