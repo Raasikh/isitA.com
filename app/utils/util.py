@@ -3,7 +3,6 @@ import re
 
 import yaml
 from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_mcp_adapters.client import MultiServerMCPClient
 
 from app.core.app_state import app_state
 from app.core.config import settings
@@ -12,32 +11,6 @@ from app.services.embbedings import Collection, CollectionsManager
 
 
 class Util:
-    @staticmethod
-    def get_mcp_client():
-        """Connect to MCP server"""
-        return MultiServerMCPClient(
-            {
-                settings.MCP_SERVER_NAME: {
-                    "transport": settings.MCP_SERVER_TRANSPORT,
-                    "url": f"http://{settings.MCP_SERVER_HOST}:{settings.MCP_SERVER_PORT}/mcp",
-                }
-            }
-        )
-
-    @staticmethod
-    async def get_formatted_prompt(client, server_name: str, prompt_name: str, **kwargs) -> str:
-        """Get prompt from MCP server."""
-        prompt = await client.get_prompt(server_name=server_name, prompt_name=prompt_name)
-        data = json.loads(prompt[0].content)
-        return data["template"].format(**kwargs)
-
-    @staticmethod
-    async def get_resource_data(client, server_name: str, uri: str):
-        """Get MCP server resource"""
-        resources = await client.get_resources(server_name=server_name, uris=uri)
-        if not resources:
-            logger.error(f"No resource data found for URI: {uri}")
-        return resources[0].data
 
     @staticmethod
     async def get_root_collection_by_name(name: str, system_id: str) -> Collection:
@@ -70,11 +43,11 @@ class Util:
             {"messages": messages_as_objects},
             config={
                 **config,
-                "callbacks": [app_state.langfuse_handler],
-                "metadata": {
-                    "langfuse_user_id": config["configurable"].get("user_id", "default"),
-                    "langfuse_session_id": config["configurable"].get("thread_id", "default"),
-                },
+                # "callbacks": [app_state.langfuse_handler],
+                # "metadata": {
+                #     "langfuse_user_id": config["configurable"].get("user_id", "default"),
+                #     "langfuse_session_id": config["configurable"].get("thread_id", "default"),
+                # },
             },
             version="v2",
             include_names=nodes_to_monitor,

@@ -26,13 +26,12 @@ RSS_FEEDS_CONFIG = [
 ]
 
 PG_CONN = {
-    "host": "host.docker.internal",
-    "database": "app_db",
-    "user": "postgres",
-    "password": "postgres",
+    "host": "postgres",
+    "database": "airflow",
+    "user": "airflow",
+    "password": "airflow",
     "port": 5432
 }
-
 
 def fetch_and_store_rss():
     try:
@@ -41,31 +40,17 @@ def fetch_and_store_rss():
 
         # Create table with UNIQUE constraint for ON CONFLICT
         cur.execute("""
-                    CREATE TABLE IF NOT EXISTS news_articles
-                    (
-                        id
-                        SERIAL
-                        PRIMARY
-                        KEY,
-                        source
-                        VARCHAR
-                    (
-                        50
-                    ),
-                        title TEXT,
-                        link TEXT UNIQUE,
-                        published TIMESTAMP,
-                        category VARCHAR
-                    (
-                        100
-                    ),
-                        domain VARCHAR
-                    (
-                        100
-                    ),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    """)
+            CREATE TABLE IF NOT EXISTS news_articles (
+                id SERIAL PRIMARY KEY,
+                source VARCHAR(50),
+                title TEXT,
+                link TEXT UNIQUE,
+                published TIMESTAMP,
+                category VARCHAR(100),
+                domain VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         conn.commit()
         logger.info("Table created/verified")
 
@@ -95,7 +80,8 @@ def fetch_and_store_rss():
                         cur.execute(
                             """
                             INSERT INTO news_articles (source, title, link, published, category, domain)
-                            VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (link) DO NOTHING;
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (link) DO NOTHING;
                             """,
                             (
                                 feed["name"],
@@ -130,14 +116,13 @@ def fetch_and_store_rss():
         logger.error(f"Unexpected error: {e}")
         raise
 
-
 with DAG(
-        "rss_news_ingestion",
-        start_date=datetime(2024, 1, 1),
-        schedule_interval="@hourly",
-        catchup=False,
-        tags=["rss", "news"],
-        description="Fetch RSS feeds and store articles in PostgreSQL"
+    "rss_news_ingestion",
+    start_date=datetime(2024, 1, 1),
+    schedule_interval="@hourly",
+    catchup=False,
+    tags=["rss", "news"],
+    description="Fetch RSS feeds and store articles in PostgreSQL"
 ) as dag:
     ingest_news = PythonOperator(
         task_id="fetch_and_store_rss",
@@ -146,4 +131,4 @@ with DAG(
         retry_delay=60
     )
 
-    # ingest_news
+    #ingest_news

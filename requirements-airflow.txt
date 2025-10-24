@@ -1,0 +1,11 @@
+playwright
+crawl4ai
+asyncio
+loguru
+tiktoken
+psycopg2
+httpx
+beautifulsoup4
+lxml
+parsel
+feedparser

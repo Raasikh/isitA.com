@@ -1,3 +1,4 @@
+#Virtual Environment
 .venv/
 
 #Cached files and directories
@@ -5,8 +6,18 @@
 *.pyc
 *.pyo
 *.log
-.idea/
-logs/
 cache/
 
+#IDE
+.idea/
+
+##Logs
+logs/
+**/logs/
+
+## Environment variables
 .env
+
+
+## Docker Data
+.data-docker/

@@ -14,8 +14,8 @@ from app.core.logging import logger
 _pool: asyncpg.Pool | None = None
 
 SYSTEM_COLLECTIONS = [
-    {"name": "database_schema", "metadata": {"description": "Database schema reference"}},
-    {"name": "sql_queries", "metadata": {"description": "Few-shot SQL examples"}},
+    {"name": "news_sources", "metadata": {"description": "List of news sources with bias metadata"}},
+    {"name": "clusters", "metadata": {"description": "Grouped similar articles on the same topic"}},
 ]
 system_id = "root"
 
@@ -85,3 +85,11 @@ def get_vectorstore(
     return store
 
 
+async def create_system_collections():
+    from app.services.embbedings import CollectionsManager
+
+    existing = [c for c in await CollectionsManager(user_id=system_id).list()]
+    for c in SYSTEM_COLLECTIONS:
+        if not any(col["name"] == c["name"] for col in existing):
+            await CollectionsManager(user_id=system_id).create(c["name"], c["metadata"])
+            logger.info(f"Created System Collection: {c['name']}")

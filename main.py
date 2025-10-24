@@ -10,13 +10,16 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.routes import router
 from app.core.app_state import app_state
 from app.core.config import settings, StartupChecker
+from app.core.database import create_system_collections
+from app.core.langfuse import init_langfuse
 from app.core.rate_limiter import limiter, rate_limit_exceeded_handler
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator:
-    checker = StartupChecker(settings)
-    checker.run()
+    StartupChecker(settings).run()
+    await create_system_collections()
+    # client, app_state.langfuse_handler = init_langfuse()
     yield
 
 

@@ -17,7 +17,7 @@ from app.core.logging import logger
 
 
 async def get_enhanced_user(
-    authorization: str = Header(..., alias="Authorization"),
+    # authorization: str = Header(..., alias="Authorization"),
 ) -> dict:
     ## TODO : Implement the whole logic for this function
     return {"sub": "user-101322","username":"default-user"}

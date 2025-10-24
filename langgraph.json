@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "news_classifier": "app.agent.graph:get_in_memory_graph"
+  }
+
+}
