@@ -134,7 +134,7 @@ def fetch_and_store_rss():
 with DAG(
         "rss_news_ingestion",
         start_date=datetime(2024, 1, 1),
-        schedule_interval="@hourly",
+        schedule="@hourly",
         catchup=False,
         tags=["rss", "news"],
         description="Fetch RSS feeds and store articles in PostgreSQL"
