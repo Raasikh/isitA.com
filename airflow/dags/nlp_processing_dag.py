@@ -2,7 +2,6 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import psycopg2
-from transformers import pipeline
 import logging
 
 logger = logging.getLogger(__name__)
@@ -58,8 +57,9 @@ def extract_unprocessed_articles():
         logger.error(f"Error extracting articles: {e}")
         raise
 
-def run_sentiment_analysis(**context):
-    articles = context['ti'].xcom_pull(task_ids='extract_unprocessed_articles')
+def run_sentiment_analysis(ti):
+    from transformers import pipeline
+    articles = ti.xcom_pull(task_ids='extract_unprocessed_articles')
     
     if not articles:
         logger.info("No new articles to process")
@@ -98,8 +98,8 @@ def run_sentiment_analysis(**context):
         logger.error(f"Error running sentiment analysis: {e}")
         raise
 
-def store_sentiment_results(**context):
-    processed = context['ti'].xcom_pull(task_ids='run_sentiment_analysis')
+def store_sentiment_results(ti):
+    processed = ti.xcom_pull(task_ids='run_sentiment_analysis')
     
     if not processed:
         logger.info("No results to store")
@@ -130,7 +130,7 @@ def store_sentiment_results(**context):
         logger.error(f"Error storing results: {e}")
         raise
 
-def display_sentiment_stats(**context):
+def display_sentiment_stats():
     try:
         conn = psycopg2.connect(**PG_CONN)
         cur = conn.cursor()
@@ -161,7 +161,7 @@ with DAG(
     dag_id='nlp_processing_dag',
     default_args=default_args,
     start_date=datetime(2025, 10, 25),
-    schedule_interval=None,
+    schedule=None,
     catchup=False,
     description="Perform sentiment analysis on news articles"
 ) as dag:
@@ -178,20 +178,17 @@ with DAG(
     
     sentiment_task = PythonOperator(
         task_id='run_sentiment_analysis',
-        python_callable=run_sentiment_analysis,
-        provide_context=True
+        python_callable=run_sentiment_analysis
     )
     
     store_task = PythonOperator(
         task_id='store_sentiment_results',
-        python_callable=store_sentiment_results,
-        provide_context=True
+        python_callable=store_sentiment_results
     )
     
     stats_task = PythonOperator(
         task_id='display_sentiment_stats',
-        python_callable=display_sentiment_stats,
-        provide_context=True
+        python_callable=display_sentiment_stats
     )
     
     init_table >> extract_task >> sentiment_task >> store_task >> stats_task
