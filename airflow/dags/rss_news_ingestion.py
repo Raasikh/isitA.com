@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime
 import feedparser
 import psycopg2
@@ -14,88 +15,70 @@ RSS_FEEDS_CONFIG = [
         "url": "https://www.cisa.gov/news.xml",
         "category": "cybersecurity_government",
         "primary_domain": "Government/CISA",
-        "fetch_frequency_hours": 1
     },
     {
         "name": "nist",
         "url": "https://www.nist.gov/news-events/resilience/rss.xml",
         "category": "cybersecurity_standards",
         "primary_domain": "Standards/NIST",
-        "fetch_frequency_hours": 6
     }
 ]
 
 PG_CONN = {
-    "host": "host.docker.internal",
+    "host": "postgres_db",
     "database": "app_db",
     "user": "postgres",
     "password": "postgres",
     "port": 5432
 }
 
-
 def fetch_and_store_rss():
     try:
         conn = psycopg2.connect(**PG_CONN)
         cur = conn.cursor()
-
-        # Create table with UNIQUE constraint for ON CONFLICT
+        
         cur.execute("""
-                    CREATE TABLE IF NOT EXISTS news_articles
-                    (
-                        id
-                        SERIAL
-                        PRIMARY
-                        KEY,
-                        source
-                        VARCHAR
-                    (
-                        50
-                    ),
-                        title TEXT,
-                        link TEXT UNIQUE,
-                        published TIMESTAMP,
-                        category VARCHAR
-                    (
-                        100
-                    ),
-                        domain VARCHAR
-                    (
-                        100
-                    ),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    """)
+            CREATE TABLE IF NOT EXISTS news_articles (
+                id SERIAL PRIMARY KEY,
+                source VARCHAR(50),
+                title TEXT,
+                link TEXT UNIQUE,
+                published TIMESTAMP,
+                category VARCHAR(100),
+                domain VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         conn.commit()
         logger.info("Table created/verified")
-
+        
         articles_inserted = 0
-
+        
         for feed in RSS_FEEDS_CONFIG:
             logger.info(f"Fetching RSS feed: {feed['name']}")
             try:
                 data = feedparser.parse(feed["url"])
-
+                
                 if data.bozo:
                     logger.warning(f"Feed parsing warning for {feed['name']}: {data.bozo_exception}")
-
+                
                 for entry in data.entries:
                     title = entry.get("title", "No Title")
                     link = entry.get("link", "No Link")
-
-                    # Parse published date
+                    
                     published = None
                     if hasattr(entry, "published"):
                         try:
                             published = parsedate_to_datetime(entry.published)
                         except Exception as e:
                             logger.warning(f"Could not parse date for {title}: {e}")
-
+                    
                     try:
                         cur.execute(
                             """
                             INSERT INTO news_articles (source, title, link, published, category, domain)
-                            VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (link) DO NOTHING;
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (link) DO NOTHING;
                             """,
                             (
                                 feed["name"],
@@ -111,39 +94,43 @@ def fetch_and_store_rss():
                         logger.error(f"Error inserting article: {e}")
                         conn.rollback()
                         continue
-
+                
                 conn.commit()
                 logger.info(f"Successfully processed {feed['name']}")
-
+                
             except Exception as e:
                 logger.error(f"Error fetching feed {feed['name']}: {e}")
                 continue
-
+        
         cur.close()
         conn.close()
         logger.info(f"Total articles inserted: {articles_inserted}")
-
-    except psycopg2.OperationalError as e:
-        logger.error(f"Database connection error: {e}")
-        raise
+        
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise
 
-
 with DAG(
-        "rss_news_ingestion",
-        start_date=datetime(2024, 1, 1),
-        schedule="@hourly",
-        catchup=False,
-        tags=["rss", "news"],
-        description="Fetch RSS feeds and store articles in PostgreSQL"
+    dag_id='rss_news_ingestion',
+    start_date=datetime(2024, 1, 1),
+    schedule='@hourly',
+    catchup=False,
+    tags=['rss', 'news'],
+    description="Fetch RSS feeds and store articles in PostgreSQL"
 ) as dag:
-    ingest_news = PythonOperator(
-        task_id="fetch_and_store_rss",
+    
+    fetch_news = PythonOperator(
+        task_id='fetch_and_store_rss',
         python_callable=fetch_and_store_rss,
         retries=2,
         retry_delay=60
     )
-
-    # ingest_news
+    
+    trigger_nlp = TriggerDagRunOperator(
+        task_id='trigger_nlp_processing',
+        trigger_dag_id='nlp_processing_dag',
+        wait_for_completion=False
+    )
+    
+    
+    fetch_news >> trigger_nlp

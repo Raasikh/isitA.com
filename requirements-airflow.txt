@@ -8,4 +8,5 @@ httpx
 beautifulsoup4
 lxml
 parsel
-feedparser
+feedparsersentence-transformers==3.0.0
+scikit-learn>=1.0.0

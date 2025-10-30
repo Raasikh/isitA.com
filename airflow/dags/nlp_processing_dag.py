@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime, timedelta
 import psycopg2
 import logging
@@ -15,6 +16,7 @@ PG_CONN = {
 }
 
 def init_sentiment_table():
+    """Create sentiment table if it doesn't exist"""
     try:
         conn = psycopg2.connect(**PG_CONN)
         cur = conn.cursor()
@@ -38,9 +40,11 @@ def init_sentiment_table():
         raise
 
 def extract_unprocessed_articles():
+    """Extract articles that haven't been processed yet"""
     try:
         conn = psycopg2.connect(**PG_CONN)
         cur = conn.cursor()
+        
         cur.execute("""
             SELECT id, title, source 
             FROM news_articles 
@@ -51,6 +55,7 @@ def extract_unprocessed_articles():
         rows = cur.fetchall()
         cur.close()
         conn.close()
+        
         logger.info(f"Extracted {len(rows)} unprocessed articles")
         return rows
     except Exception as e:
@@ -58,7 +63,7 @@ def extract_unprocessed_articles():
         raise
 
 def run_sentiment_analysis(ti):
-    from transformers import pipeline
+    """Analyze sentiment of article titles"""
     articles = ti.xcom_pull(task_ids='extract_unprocessed_articles')
     
     if not articles:
@@ -66,6 +71,8 @@ def run_sentiment_analysis(ti):
         return []
     
     try:
+        from transformers import pipeline
+        
         sentiment_pipeline = pipeline(
             "sentiment-analysis",
             model="distilbert-base-uncased-finetuned-sst-2-english",
@@ -76,6 +83,7 @@ def run_sentiment_analysis(ti):
         for article_id, title, source in articles:
             try:
                 text_to_analyze = title[:512]
+                
                 result = sentiment_pipeline(text_to_analyze)[0]
                 sentiment_label = result['label']
                 sentiment_score = result['score']
@@ -99,6 +107,7 @@ def run_sentiment_analysis(ti):
         raise
 
 def store_sentiment_results(ti):
+    """Store sentiment analysis results in database"""
     processed = ti.xcom_pull(task_ids='run_sentiment_analysis')
     
     if not processed:
@@ -131,6 +140,7 @@ def store_sentiment_results(ti):
         raise
 
 def display_sentiment_stats():
+    """Display sentiment statistics"""
     try:
         conn = psycopg2.connect(**PG_CONN)
         cur = conn.cursor()
@@ -160,7 +170,7 @@ default_args = {
 with DAG(
     dag_id='nlp_processing_dag',
     default_args=default_args,
-    start_date=datetime(2025, 10, 25),
+    start_date=datetime(2024, 10, 25),
     schedule=None,
     catchup=False,
     description="Perform sentiment analysis on news articles"
@@ -191,4 +201,8 @@ with DAG(
         python_callable=display_sentiment_stats
     )
     
-    init_table >> extract_task >> sentiment_task >> store_task >> stats_task
+    trigger_clustering = TriggerDagRunOperator(
+        task_id='trigger_topic_clustering',
+        trigger_dag_id='topic_clustering_dag',
+        wait_for_completion=False
+    )

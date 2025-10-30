@@ -203,5 +203,15 @@ with DAG(
         task_id='display_cluster_stats',
         python_callable=display_cluster_stats
     )
+
+    from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+
+    trigger_bias_dag = TriggerDagRunOperator(
+        task_id="trigger_bias_detection_dag",
+        trigger_dag_id="bias_detection_dag"
+    )
+
     
-    init_table >> extract_task >> cluster_task >> store_task >> stats_task
+
+    
+    init_table >> extract_task >> cluster_task >> store_task >> stats_task>> trigger_bias_dag
